@@ -1,4 +1,12 @@
 services:
+  app-logs-init:
+    image: busybox:1.37.0
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 10001:10001 /var/log/app"]
+    volumes:
+      - app-logs:/var/log/app
+    restart: "no"
+
   webapp:
     build: ./app
     container_name: my-webapp
@@ -6,6 +14,9 @@ services:
       - "5000:5000"
     volumes:
       - app-logs:/var/log/app
+    depends_on:
+      app-logs-init:
+        condition: service_completed_successfully
     healthcheck:
       test:
         - CMD
@@ -18,12 +29,13 @@ services:
       start_period: 10s
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.15.0
     container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     depends_on:
@@ -31,7 +43,7 @@ services:
         condition: service_healthy
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.2.3
     container_name: grafana
     ports:
       - "3000:3000"
@@ -46,7 +58,7 @@ services:
       - prometheus
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.7.8
     container_name: loki
     ports:
       - "3100:3100"

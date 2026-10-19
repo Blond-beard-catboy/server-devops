@@ -1,0 +1,20 @@
+groups:
+  - name: webapp
+    rules:
+      - alert: WebAppTargetDown
+        expr: up{job="webapp"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Web application metrics target is down"
+          description: "Prometheus has been unable to scrape the webapp for more than one minute."
+
+      - alert: WebAppHttp5xx
+        expr: sum(rate(http_requests_total{job="webapp",status_code=~"5.."}[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Web application is returning HTTP 5xx responses"
+          description: "The webapp has returned server errors during the last five minutes."

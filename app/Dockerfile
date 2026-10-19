@@ -5,7 +5,15 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+RUN groupadd --gid 10001 app \
+    && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /var/log/app \
+    && chown 10001:10001 /var/log/app
+
+COPY --chown=10001:10001 . .
+
+ENV APP_LOG_DIR=/var/log/app
+USER 10001:10001
 
 EXPOSE 5000
 

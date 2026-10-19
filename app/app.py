@@ -10,7 +10,7 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 app = Flask(__name__)
 
 # Пишем логи в stdout для Docker и в общий том, который читает Grafana Alloy.
-LOG_DIR = '/var/log/app'
+LOG_DIR = os.environ.get('APP_LOG_DIR', '/var/log/app')
 os.makedirs(LOG_DIR, exist_ok=True)
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 file_handler = RotatingFileHandler(
