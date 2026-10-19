@@ -34,5 +34,11 @@ def test_metrics_exposes_request_counters_and_excludes_scrapes():
     metrics = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert 'http_requests_total{method="GET",endpoint="/health",status_code="200"}' in metrics
+    health_counter = next(
+        line
+        for line in metrics.splitlines()
+        if line.startswith("http_requests_total{") and 'endpoint="/health"' in line
+    )
+    assert 'method="GET"' in health_counter
+    assert 'status_code="200"' in health_counter
     assert 'endpoint="/metrics"' not in metrics
