@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        env:
+          GF_SECURITY_ADMIN_PASSWORD: ci-only-placeholder
+        run: docker compose config -q
+
+      - name: Build web application image
+        run: docker build --tag server-devops-webapp:ci ./app

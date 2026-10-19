@@ -1,0 +1,17 @@
+loki.source.file "app_logs" {
+  targets = [
+    {
+      __path__ = "/var/log/app/app.log",
+      job      = "flask",
+      service  = "webapp",
+    },
+  ]
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

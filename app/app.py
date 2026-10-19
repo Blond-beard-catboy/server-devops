@@ -9,7 +9,7 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 # Создаем приложение Flask
 app = Flask(__name__)
 
-# Пишем логи в stdout для Docker и в общий том, который читает Promtail.
+# Пишем логи в stdout для Docker и в общий том, который читает Grafana Alloy.
 LOG_DIR = '/var/log/app'
 os.makedirs(LOG_DIR, exist_ok=True)
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -40,10 +40,17 @@ def start_request_timer():
 def record_request_metrics(response):
     # Не считаем скрейпы Prometheus, иначе метрики сами создают трафик.
     if request.path != '/metrics':
-        endpoint = request.url_rule.rule if request.url_rule else request.path
+        # Unknown paths share a fixed label to prevent unbounded metric cardinality.
+        endpoint = request.url_rule.rule if request.url_rule else 'unmatched'
+        duration = time.perf_counter() - g.request_started_at
         REQUEST_COUNT.labels(request.method, endpoint, str(response.status_code)).inc()
-        REQUEST_DURATION.labels(request.method, endpoint).observe(
-            time.perf_counter() - g.request_started_at
+        REQUEST_DURATION.labels(request.method, endpoint).observe(duration)
+        logger.info(
+            'HTTP request method=%s path=%s status=%s duration_seconds=%.4f',
+            request.method,
+            request.path,
+            response.status_code,
+            duration,
         )
     return response
 
@@ -74,4 +81,5 @@ def demo_error():
     return {'status': 'error', 'message': 'Intentional demo error'}, 500
 
 if __name__ == '__main__':
+    # Удобно для локальной разработки; контейнер запускает Gunicorn из Dockerfile.
     app.run(host='0.0.0.0', port=5000)

@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind=0.0.0.0:5000", "--workers=1", "--worker-class=gthread", "--threads=4", "--access-logfile=-", "--error-logfile=-", "app:app"]
